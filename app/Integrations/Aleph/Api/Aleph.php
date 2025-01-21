@@ -36,7 +36,8 @@ class Aleph
                 id: $category['id'],
                 name: $category['nombre'],
                 cmdb_fields: $category['campos_cmdb'],
-            ));
+            ))
+            ->sortBy(['id', 'ASC']);
     }
 
     /**
@@ -64,7 +65,8 @@ class Aleph
                 name: $cmdb['nombre'],
                 category_id: $cmdb['categoria_id'],
                 subcategory: $cmdb['subcategoria'] ?? null,
-            ));
+            ))
+            ->sortBy(['identificador', 'ASC']);
     }
 
 }
