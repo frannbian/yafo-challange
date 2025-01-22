@@ -9,7 +9,7 @@ $cmdb = json_decode(json_encode($cmdb));
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-screen-2xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 pb-2 text-gray-900 dark:text-gray-100">
                     {{ __("Listado de CMDB") }}
@@ -26,7 +26,7 @@ $cmdb = json_decode(json_encode($cmdb));
                 <div class="flex flex-col">
                     <div class="-m-1.5 overflow-x-auto">
                         <div class="p-1.5 min-w-full inline-block align-middle">
-                            <div class="grid grid-cols-2 gap-">
+                            <div class="grid grid-cols-2">
                                 <div class="py-3 px-4">
                                     <form method="GET" id="category-filter" class="display: inline" action="{{ route('cmdb.list') }}">
                                         <div class="relative max-w-xs">
@@ -38,20 +38,23 @@ $cmdb = json_decode(json_encode($cmdb));
                                             </select>
                                         </div>
                                     </form>
+                                </div>
+                                <div class="py-3 px-4 end-1.5">
                                     @if(request()->get('category_id'))
                                     <form method="GET" id="export" class="display: inline" action="{{ route('cmdb.export') }}">
                                         <input type="hidden" name="category_id" value="{{ request()->get('category_id') }}">
-                                        <button type="button" onclick="document.getElementById('export').submit()" class="py-3 px-4 inline-flex items-center gap-x-2 -ms-px first:rounded-s-lg first:ms-0 last:rounded-e-lg text-sm font-medium focus:z-10 border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800">
+                                        <button type="button" style="float:right" onclick="document.getElementById('export').submit()" class="mx-4 py-3 px-4 inline-flex items-center gap-x-2 -ms-px first:rounded-s-lg first:ms-0 last:rounded-e-lg text-sm font-medium focus:z-10 border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800">
                                             Exportar
                                         </button>
                                     </form>
                                     @endif
-                                    <form method="post" id="import" class="display: inline" action="{{ route('cmdb.import') }}">
+                                    <form method="post" enctype="multipart/form-data" id="import" class="display: inline" action="{{ route('cmdb.import') }}">
                                         @csrf
-                                        <button type="button" class="py-3 px-4 inline-flex items-center gap-x-2 -ms-px first:rounded-s-lg first:ms-0 last:rounded-e-lg text-sm font-medium focus:z-10 border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800">
+                                        <label for="file" style="float:right"
+                                        class="flex mx-4 py-3 px-4 inline-flex items-center gap-x-2 -ms-px first:rounded-s-lg first:ms-0 last:rounded-e-lg text-sm font-medium focus:z-10 border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800">
                                             Importar
-                                            <input type="file" name="archivo" onchange="document.getElementById('import').submit()" style="width: 100%; height: 100%; opacity: 0;"></input>
-                                        </button>
+                                            <input type="file" name="file" id='file' class="hidden" onchange="document.getElementById('import').submit()" />
+                                        </label>
                                     </form>
                                 </div>
                             </div>
@@ -62,7 +65,13 @@ $cmdb = json_decode(json_encode($cmdb));
                                         <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase">Identificador</th>
                                         <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase">Nombre</th>
                                         <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                                        <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase">Campos opcionales</th>
+                                        @if(request()->get('category_id'))
+                                            @foreach ($categories->firstWhere('id', request()->get('category_id') )->cmdb_fields as $optionalField)
+                                                @if($loop->index > 2)
+                                                    <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase">{{ $optionalField }}</th>
+                                                @endif
+                                            @endforeach
+                                        @endif
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -71,7 +80,13 @@ $cmdb = json_decode(json_encode($cmdb));
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">{{ $row->identificator  }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">{{ $row->name  }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">{{ $categories->firstWhere('id', $row->category_id )->name ?? null }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">{{ implode(', ', $categories->firstWhere('id', $row->category_id )->cmdb_fields) ?? null }}</td>
+                                                @if(request()->get('category_id'))
+                                                    @foreach ($categories->firstWhere('id', request()->get('category_id') )->cmdb_fields as $optionalField)
+                                                        @if($loop->index > 2)
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">{{ $row->optionalFields->{iconv('UTF-8', 'ASCII//TRANSLIT', str($optionalField)->lower()->snake())} ?? null }}</td>
+                                                        @endif
+                                                    @endforeach
+                                                @endif
                                             </tr>
                                         @empty
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">No se encontraron datos</td>
