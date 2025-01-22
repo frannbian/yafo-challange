@@ -36,7 +36,8 @@ class CMDBController extends Controller
 
     public function import()
     {
-        return $this->cmdbService->importFromExcel();
+        $this->cmdbService->importFromExcel();
+        return back();
     }
 
     public function export(Request $request)
@@ -45,13 +46,31 @@ class CMDBController extends Controller
         $categoryInformation = $this->cmdbService->getCategoryInformation($categoryId);
 
         $cacheKey = md5("cmdb-{$categoryId}");
-        $cmdb = Cache::tags(['cmdb'])->remember($cacheKey, 3600, function () use ($categoryId) {
+        $cmdbs = Cache::tags(['cmdb'])->remember($cacheKey, 3600, function () use ($categoryId) {
             return $this->cmdbService->get($categoryId);
         });
 
         $fileName = $categoryInformation['name'] . '-' . date('d-m-Y', time());
 
-        $this->cmdbService->exportToExcel($cmdb, $categoryInformation['cmdb_fields'], $fileName);
+        $data = [];
+        foreach($cmdbs as $cmdb) {
+            $parsedCmdb = [
+                'identificator' => $cmdb->identificator,
+                'name' => $cmdb->name,
+                'category_id' => $cmdb->category_id,
+            ];
+
+            foreach($categoryInformation['cmdb_fields'] as $optionalField) {
+                if(!empty($cmdb->optionalFields[iconv('UTF-8', 'ASCII//TRANSLIT', str($optionalField)->lower()->snake())])) {
+                    $parsedCmdb[iconv('UTF-8', 'ASCII//TRANSLIT', str($optionalField)->lower()->snake())] = $cmdb->optionalFields[iconv('UTF-8', 'ASCII//TRANSLIT', str($optionalField)->lower()->snake())];
+                }
+            }
+            $data[] = $parsedCmdb;
+        }
+
+        $data = collect($data);
+
+        $this->cmdbService->exportToExcel($data, $categoryInformation['cmdb_fields'], $fileName);
         return back();
     }
 }

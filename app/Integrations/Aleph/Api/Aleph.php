@@ -64,7 +64,7 @@ class Aleph
                 identificator: $cmdb['identificador'],
                 name: $cmdb['nombre'],
                 category_id: $cmdb['categoria_id'],
-                subcategory: $cmdb['subcategoria'] ?? null,
+                optionalFields: array_diff_key($cmdb, ["identificador" => -1, "nombre" => -1, "categoria_id" => -1])
             ))
             ->sortBy(['identificador', 'ASC']);
     }

@@ -56,6 +56,10 @@ class CMDBService
      */
     public function importFromExcel(): void
     {
-        Excel::import(new CMDBImport, request()->file('file'));
+        try {
+            Excel::import(new CMDBImport, request()->file('file'));
+        } catch(\Exception $e) {
+            dd($e);
+        }
     }
 }
